@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -15,7 +16,6 @@ class MainActivity : Activity() {
 
     private lateinit var status: TextView
     private lateinit var stats: TextView
-    private lateinit var open: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,19 +45,25 @@ class MainActivity : Activity() {
         }
         root.addView(stats)
 
-        open = Button(this).apply {
+        root.addView(Button(this).apply {
             text = "去开启无障碍服务"
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
-        }
-        root.addView(open)
+        })
+
+        root.addView(CheckBox(this).apply {
+            text = "调试日志（把界面文字打到 logcat）"
+            isChecked = SkipService.debug
+            setOnCheckedChangeListener { _, checked -> SkipService.debug = checked }
+        })
 
         root.addView(TextView(this).apply {
             text = "开启后在「已下载的应用」里找到 DSH AutoSkip 并启用。\n" +
-                "它只监听 com.clggjv.xcjfmd.ffo 的界面，看到「暂时跳过」就点一下。"
+                "每 300ms 扫一次界面，倒计时一结束就点「暂时跳过」。\n" +
+                "点不动时按比例坐标兜底（弹窗左侧 35% / 高度 53%）。"
             textSize = 12f
-            setPadding(0, 40, 0, 0)
+            setPadding(0, 32, 0, 0)
         })
 
         setContentView(ScrollView(this).apply { addView(root) })
@@ -65,8 +71,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        val on = isServiceEnabled()
-        status.text = if (on) "状态：已开启" else "状态：未开启"
+        status.text = if (isServiceEnabled()) "状态：已开启" else "状态：未开启"
         stats.text = "已自动跳过 ${SkipService.clicks} 次" +
             (if (SkipService.lastHit.isNotEmpty()) "（最近：${SkipService.lastHit}）" else "")
     }
